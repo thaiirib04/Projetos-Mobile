@@ -30,14 +30,39 @@ class AgendamentoEventoTela extends StatefulWidget{
   State<AgendamentoEventoTela> createState() => _AgendamentoEventoTelaState();
 }
 
+enum Visibilidade { public, private, vip } 
+
 class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
   // 1. valores padrao (para reset)
   static final DateTime _dataPadrao = DateTime.now();
   static const TimeOfDay _horarioPadrao = TimeOfDay(hour: 19, minute: 0);
+  static const String _tipoPadrao = 'Aniversário';
+  static const double _convidadosPadrao = 50.0;
+  static const Visibilidade _visibilidadePadrao = .private;
+
+   static const Map<String,bool> _servicosPadrao = {
+    'Buffet': false,
+    'Fotógrafo': false,
+    'Decoração': false,
+    'DJ': false,
+   };
+
+   static const List<String> _tagsDisponiveis = [
+    'Vegetariano',
+    'Sem Glúten',
+    'Sem Lactose',
+    'Vegano',
+   ];
+
+   static const List<String> _tagsPadrao = [];
 
   // 2. variaveis de estado
   late DateTime _dataSelecionada;
   late TimeOfDay _horarioSelecionado;
+  late String _tipoEventoSelecionado;
+  late double _quantidadeConvidados;
+  late Visibilidade _visibilidadeSelecionada;
+  late Map<String,bool> _servicosSelecionados;
 
   @override
   void initState() {
@@ -49,6 +74,10 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
     setState(() {
       _dataSelecionada = _dataPadrao;
       _horarioSelecionado = _horarioPadrao;
+      _tipoEventoSelecionado = _tipoPadrao;
+      _quantidadeConvidados = _convidadosPadrao;
+      _visibilidadeSelecionada = _visibilidadePadrao;
+      _servicosSelecionados = Map<String,bool>.from(_servicosPadrao);
     });
     print('[DEBUG] Formulário resetado para os valores padrao.');
   }
@@ -61,6 +90,10 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
       'Data: ${_dataSelecionada.day}/${_dataSelecionada.month}/${_dataSelecionada.year}',
     );
     print('Horário: ${_horarioSelecionado.format(context)}');
+    print('Tipo de Evento: $_tipoEventoSelecionado');
+    print('Estimativa de Convidados: ${_quantidadeConvidados.round()}');
+    print('Visibilidade: $_visibilidadeSelecionada');
+    print('Serviços Adicionais: $_servicosSelecionados');
     print('=====================================');
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -141,9 +174,135 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
               ],
             ),
             const Divider(height: 32),
-          ],
-        ),
+
+            // 3. menu (dropdownButton)
+            Text(
+              'Tipo de Evento',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _tipoEventoSelecionado,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              items: ['Aniversário', 'Casamento', 'Corporativo', 'Outro']
+              .map(
+                (tipo) => DropdownMenuItem(value: tipo, child: Text(tipo)),
+                )
+                .toList(),
+            onChanged: (novoValor) {
+              if (novoValor != null) {
+                setState(() {
+                  _tipoEventoSelecionado = novoValor;
+                });
+                print(
+                  '[DEBUG - Menu] Tipo de evento selecionado: $novoValor',
+                );
+              }
+            },
+          ),
+          const Divider(height: 32),
+
+          // 4. slider
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Quantidade de Convidados',
+              style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                '${_quantidadeConvidados.round()} pessoas',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          Slider(
+            value: _quantidadeConvidados,
+            min: 10,
+            max: 500,
+            divisions: 49,
+            label: _quantidadeConvidados.round().toString(),
+            onChanged: (novoValor){
+              setState(() {
+                _quantidadeConvidados =novoValor;
+              });
+              print(
+                '[DEBUG - Slider] Quantidade de convidados: ${novoValor.round()}',
+              );
+            },
+          ),
+          const Divider(height: 32),
+
+          // 5. radio
+          Text(
+            'Visibilidade do Evento',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+
+          RadioGroup<Visibilidade>(
+            groupValue: _visibilidadeSelecionada,
+            onChanged: (Visibilidade? visibilidade){
+              setState(() {
+                _visibilidadeSelecionada = visibilidade!;
+                print('[DEBUG - Radio] Visibilidade: $visibilidade');
+              });
+            }, 
+            child: Column(
+              children: [
+                ListTile(
+                  title: Text('Público'),
+                  leading: Radio<Visibilidade>(value: Visibilidade.public),
+
+                ),
+
+                ListTile(
+                  title: Text('Privado'),
+                  leading: Radio<Visibilidade>(value: Visibilidade.private),
+                ),
+
+                ListTile(
+                  title: Text('Apenas Convidados'),
+                  leading: Radio<Visibilidade>(value: Visibilidade.vip),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 32),
+
+          // 6. checkbox
+          Text(
+            'Serviços Adicionais',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Column(
+            children: _servicosSelecionados.keys.map((servico){
+              return CheckboxListTile(
+                dense: true,
+                title: Text(servico),
+                value: _servicosSelecionados[servico],
+                 onChanged: (bool? marcado) {
+                  setState(() {
+                    _servicosSelecionados[servico] = marcado ?? false;
+                  });
+                  print(
+                    '[DEBUG - Checkbox] Serviço "$servico" alterado para: $marcado',
+                  );
+                 },
+                );
+            }).toList(),
+          ),
+          const Divider(height: 32),
+
+
+
+        ],
       ),
+    ),
     );
   }
 }
