@@ -55,6 +55,7 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
    ];
 
    static const List<String> _tagsPadrao = [];
+   static const bool _lembretePadrao = true;
 
   // 2. variaveis de estado
   late DateTime _dataSelecionada;
@@ -63,6 +64,8 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
   late double _quantidadeConvidados;
   late Visibilidade _visibilidadeSelecionada;
   late Map<String,bool> _servicosSelecionados;
+  late List<String> _tagsSelecionadas;
+  late bool _notificacaoAtiva;
 
   @override
   void initState() {
@@ -78,6 +81,8 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
       _quantidadeConvidados = _convidadosPadrao;
       _visibilidadeSelecionada = _visibilidadePadrao;
       _servicosSelecionados = Map<String,bool>.from(_servicosPadrao);
+      _tagsSelecionadas =List<String>.from(_tagsPadrao);
+      _notificacaoAtiva = _lembretePadrao;
     });
     print('[DEBUG] Formulário resetado para os valores padrao.');
   }
@@ -94,6 +99,8 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
     print('Estimativa de Convidados: ${_quantidadeConvidados.round()}');
     print('Visibilidade: $_visibilidadeSelecionada');
     print('Serviços Adicionais: $_servicosSelecionados');
+    print('Restrições Alimentares (Tags): $_tagsSelecionadas');
+    print('Lembrete Automático: $_notificacaoAtiva');
     print('=====================================');
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -298,11 +305,83 @@ class _AgendamentoEventoTelaState extends State<AgendamentoEventoTela> {
           ),
           const Divider(height: 32),
 
+          // 7. Chip(filterchip)
+          Text(
+            'Restrições Alimentares (Tags)',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8.0,
+            children: _tagsDisponiveis.map((tag) {
+              final estaSelecionado = _tagsSelecionadas.contains(tag);
+              return FilterChip(
+                label: Text(tag),
+                selected: estaSelecionado,
+                onSelected: (bool selecionado){
+                  setState(() {
+                    if (selecionado){
+                      _tagsSelecionadas.add(tag);
+                    } else {
+                      _tagsSelecionadas.remove(tag);
+                    }
+                  });
+                  print('[DEBUG - Chip] Tag "$tag" ${selecionado ? "adicionada" : "removida"}. Lista atual: $_tagsSelecionadas',
+                  );
+                },
+              );
 
+            }).toList(),
+          ),
+          const Divider(height: 32),
 
+          // 8. switch
+          SwitchListTile(
+            title: const Text("Enviar lembrete Automático"),
+            subtitle: const Text(
+              'Notificar convidados 24 horas antes do evento',
+            ),
+            value: _notificacaoAtiva,
+            onChanged: (bool ativo){
+              setState(() {
+                _notificacaoAtiva = ativo;
+              });
+              print('[DEBUG - Switch] Notificação automática alterada para: $ativo',
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+
+          //botões de ação final (cancelar e salvar)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _resetarValores,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _salvarFormulario,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Salvar'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     ),
-    );
-  }
+  );
+}
 }
